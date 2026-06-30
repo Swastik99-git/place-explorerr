@@ -1,0 +1,42 @@
+/*
+# Storage Policies for avatars and place-images buckets
+
+Allows authenticated users to upload to their own folder,
+and everyone (anon + authenticated) to read public images.
+*/
+
+-- Avatars bucket policies
+DROP POLICY IF EXISTS "avatars_public_read" ON storage.objects;
+CREATE POLICY "avatars_public_read" ON storage.objects FOR SELECT
+  TO anon, authenticated USING (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "avatars_auth_insert" ON storage.objects;
+CREATE POLICY "avatars_auth_insert" ON storage.objects FOR INSERT
+  TO authenticated WITH CHECK (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "avatars_auth_update" ON storage.objects;
+CREATE POLICY "avatars_auth_update" ON storage.objects FOR UPDATE
+  TO authenticated USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+DROP POLICY IF EXISTS "avatars_auth_delete" ON storage.objects;
+CREATE POLICY "avatars_auth_delete" ON storage.objects FOR DELETE
+  TO authenticated USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Place images bucket policies
+DROP POLICY IF EXISTS "place_images_public_read" ON storage.objects;
+CREATE POLICY "place_images_public_read" ON storage.objects FOR SELECT
+  TO anon, authenticated USING (bucket_id = 'place-images');
+
+DROP POLICY IF EXISTS "place_images_auth_insert" ON storage.objects;
+CREATE POLICY "place_images_auth_insert" ON storage.objects FOR INSERT
+  TO authenticated WITH CHECK (
+    bucket_id = 'place-images'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+DROP POLICY IF EXISTS "place_images_auth_delete" ON storage.objects;
+CREATE POLICY "place_images_auth_delete" ON storage.objects FOR DELETE
+  TO authenticated USING (
+    bucket_id = 'place-images'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
